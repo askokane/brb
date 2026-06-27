@@ -17,31 +17,23 @@ export default function OnboardingProgress() {
   const currentStep = currentIndex + 1
 
   return (
-    <header className="px-6 py-4 flex items-center gap-4">
-      {currentStep > 1 ? (
-        <button
-          onClick={() => router.push(STEPS[currentIndex - 1])}
-          className="p-2 rounded-full hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-800"
-          aria-label="Go back"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-      ) : (
-        <div className="w-9 h-9" />
-      )}
-
-      <div className="flex-1 flex items-center gap-2">
-        {STEPS.map((_, i) => (
-          <div
-            key={i}
-            className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
-              i < currentStep ? 'bg-indigo-500' : 'bg-slate-200'
-            }`}
-          />
-        ))}
+    <header className="px-5 py-4 flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        {currentStep > 1 ? (
+          <button
+            onClick={() => router.push(STEPS[currentIndex - 1])}
+            className="p-1.5 rounded-full hover:bg-stone-100 transition-colors text-stone-400 hover:text-stone-700"
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+        ) : (
+          <div className="w-7 h-7" />
+        )}
+        <span className="text-lg font-bold tracking-tight text-stone-900">BRB</span>
       </div>
 
-      <span className="text-sm text-slate-400 w-9 text-right tabular-nums">
+      <span className="text-sm font-medium text-stone-400 tabular-nums">
         {currentStep}/{STEPS.length}
       </span>
     </header>

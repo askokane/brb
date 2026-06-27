@@ -1,10 +1,10 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Eye, EyeOff, Link2, Check } from 'lucide-react'
 import { useOnboardingStore } from '@/store/onboarding'
 import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Eye, EyeOff, Link2, Check } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { cn } from '@/lib/utils'
 
 export default function Step1Page() {
   const router = useRouter()
@@ -42,7 +42,6 @@ export default function Step1Page() {
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) e.email = 'Enter a valid email'
     if (!profile.password) e.password = 'Password is required'
     else if (profile.password.length < 8) e.password = 'At least 8 characters'
-    if (profile.password !== profile.confirmPassword) e.confirmPassword = 'Passwords do not match'
     return e
   }
 
@@ -55,15 +54,17 @@ export default function Step1Page() {
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold text-slate-900">Create your account</h1>
-        <p className="text-slate-500">Let&apos;s get the basics set up so we can personalize your experience.</p>
+        <h1 className="text-3xl font-bold text-stone-900 leading-tight">
+          Let&apos;s build your<br />network system
+        </h1>
+        <p className="text-stone-500">It only takes 2 minutes.</p>
       </div>
 
       {/* Sign in with LinkedIn (official OpenID Connect) — prefills name + email */}
       <div className="space-y-3">
         <a
           href="/api/auth/linkedin"
-          className="flex items-center justify-center gap-2 w-full h-12 rounded-lg bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-medium transition-colors"
+          className="flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-semibold transition-colors"
         >
           <Link2 className="w-4 h-4" /> Continue with LinkedIn
         </a>
@@ -82,103 +83,92 @@ export default function Step1Page() {
           <p className="text-xs text-red-500">LinkedIn sign-in didn&apos;t complete. Use email instead.</p>
         )}
 
-        <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span className="flex-1 h-px bg-slate-200" /> or with email <span className="flex-1 h-px bg-slate-200" />
+        <div className="flex items-center gap-3 text-xs text-stone-400">
+          <span className="flex-1 h-px bg-stone-200" /> or with email <span className="flex-1 h-px bg-stone-200" />
         </div>
       </div>
 
       <div className="space-y-4">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">Full name</label>
+        <Field label="Full name" error={errors.fullName}>
           <Input
             placeholder="Alex Johnson"
             value={profile.fullName}
             onChange={(e) => setProfile({ fullName: e.target.value })}
+            className={inputClass(!!errors.fullName)}
           />
-          {errors.fullName && <p className="text-xs text-red-500">{errors.fullName}</p>}
-        </div>
+        </Field>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">Email address</label>
+        <Field label="Email address" error={errors.email}>
           <Input
             type="email"
             placeholder="alex@example.com"
             value={profile.email}
             onChange={(e) => setProfile({ email: e.target.value })}
+            className={inputClass(!!errors.email)}
           />
-          {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-        </div>
+        </Field>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">Password</label>
+        <Field label="Password" error={errors.password}>
           <div className="relative">
             <Input
               type={showPassword ? 'text' : 'password'}
               placeholder="Min. 8 characters"
               value={profile.password}
               onChange={(e) => setProfile({ password: e.target.value })}
-              className="pr-10"
+              className={cn(inputClass(!!errors.password), 'pr-10')}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
-          {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">Confirm password</label>
-          <Input
-            type="password"
-            placeholder="Repeat your password"
-            value={profile.confirmPassword}
-            onChange={(e) => setProfile({ confirmPassword: e.target.value })}
-          />
-          {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword}</p>}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">
-              Role / Title <span className="text-slate-400 font-normal">(optional)</span>
-            </label>
-            <Input
-              placeholder="Founder, Engineer…"
-              value={profile.role}
-              onChange={(e) => setProfile({ role: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-slate-700">
-              Company <span className="text-slate-400 font-normal">(optional)</span>
-            </label>
-            <Input
-              placeholder="Acme Inc."
-              value={profile.company}
-              onChange={(e) => setProfile({ company: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-slate-700">
-            LinkedIn URL <span className="text-slate-400 font-normal">(optional)</span>
-          </label>
-          <Input
-            placeholder="https://linkedin.com/in/yourname"
-            value={profile.linkedinUrl}
-            onChange={(e) => setProfile({ linkedinUrl: e.target.value })}
-          />
-        </div>
+        </Field>
       </div>
 
-      <Button onClick={handleNext} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 text-base">
+      <button
+        onClick={handleNext}
+        className="w-full h-12 rounded-xl bg-stone-900 hover:bg-stone-800 active:bg-stone-950 text-white text-base font-semibold transition-colors"
+      >
         Continue
-      </Button>
+      </button>
+
+      <p className="text-center text-xs text-stone-400">
+        Already have an account?{' '}
+        <a href="/login" className="text-stone-600 underline underline-offset-2 hover:text-stone-900">
+          Sign in
+        </a>
+      </p>
     </div>
+  )
+}
+
+function Field({
+  label,
+  error,
+  children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium text-stone-700">{label}</label>
+      {children}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+    </div>
+  )
+}
+
+function inputClass(hasError: boolean) {
+  return cn(
+    'h-12 w-full rounded-xl border bg-white px-4 text-base text-stone-900 placeholder:text-stone-400',
+    'focus-visible:ring-2 focus-visible:ring-stone-400 focus-visible:border-stone-400',
+    'transition-colors',
+    hasError ? 'border-red-400' : 'border-stone-200 hover:border-stone-300'
   )
 }
