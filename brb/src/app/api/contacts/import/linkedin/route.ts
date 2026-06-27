@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { batchFetchLinkedInProfiles } from '@/lib/linkedin/proxycurl'
 
+const MAX_BATCH = 50
+
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null)
 
   if (!body || !Array.isArray(body.urls) || body.urls.length === 0) {
     return NextResponse.json(
-      { error: 'Provide a non-empty array of LinkedIn URLs at body.urls' },
+      { error: 'Provide a non-empty array of LinkedIn profile URLs at body.urls' },
       { status: 400 }
     )
   }
@@ -17,13 +19,16 @@ export async function POST(req: NextRequest) {
 
   if (urls.length === 0) {
     return NextResponse.json(
-      { error: 'No valid LinkedIn profile URLs found (must start with https://www.linkedin.com/in/)' },
+      { error: 'No valid LinkedIn profile URLs (must start with https://www.linkedin.com/in/)' },
       { status: 400 }
     )
   }
 
-  if (urls.length > 50) {
-    return NextResponse.json({ error: 'Maximum 50 URLs per request' }, { status: 400 })
+  if (urls.length > MAX_BATCH) {
+    return NextResponse.json(
+      { error: `Maximum ${MAX_BATCH} URLs per request` },
+      { status: 400 }
+    )
   }
 
   const results = await batchFetchLinkedInProfiles(urls)
@@ -32,8 +37,12 @@ export async function POST(req: NextRequest) {
   const failed = results.filter((r) => r.error !== null)
 
   return NextResponse.json({
-    imported: succeeded.map((r) => r.contact),
+    contacts: succeeded.map((r) => r.contact),
     errors: failed.map((r) => ({ url: r.url, error: r.error })),
-    summary: { total: urls.length, succeeded: succeeded.length, failed: failed.length },
+    summary: {
+      total: urls.length,
+      succeeded: succeeded.length,
+      failed: failed.length,
+    },
   })
 }

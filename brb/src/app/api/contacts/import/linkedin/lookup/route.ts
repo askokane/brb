@@ -13,12 +13,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const profile = await fetchLinkedInProfile(url)
-    const contact = normalizeProfile(profile)
-    return NextResponse.json({ contact, raw: profile })
+    const raw = await fetchLinkedInProfile(url)
+    const contact = normalizeProfile(raw, url)
+    return NextResponse.json({ contact, raw })
   } catch (err) {
     const message = (err as Error).message
-    const status = message.includes('not found') ? 404 : message.includes('rate limit') ? 429 : 502
+    const status = message.includes('not found')
+      ? 404
+      : message.includes('rate limit')
+        ? 429
+        : 502
     return NextResponse.json({ error: message }, { status })
   }
 }
