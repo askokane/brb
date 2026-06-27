@@ -235,8 +235,8 @@ export function normalizeProfile(
 
   return {
     fullName:
-      profile.full_name ??
-      [profile.first_name, profile.last_name].filter(Boolean).join(' ') ||
+      (profile.full_name ??
+      [profile.first_name, profile.last_name].filter(Boolean).join(' ')) ||
       'Unknown',
     email: profile.personal_emails?.[0] ?? null,
     phone: profile.personal_numbers?.[0] ?? null,
