@@ -133,8 +133,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{greeting}, {firstName} 👋</h1>
-          <p className="text-sm text-slate-400 mt-0.5">{today}</p>
+          {/* greeting + date derive from the viewer's local clock, so server and client can differ — let the client value win */}
+          <h1 className="text-2xl font-bold text-slate-900" suppressHydrationWarning>{greeting}, {firstName} 👋</h1>
+          <p className="text-sm text-slate-400 mt-0.5" suppressHydrationWarning>{today}</p>
         </div>
         <Link href="/broadcast/new" className={cn(buttonVariants(), 'bg-indigo-600 hover:bg-indigo-700 text-white gap-2')}>
           <Plus className="w-4 h-4" /> New Broadcast
@@ -174,7 +175,7 @@ export default function DashboardPage() {
                       <p className="text-sm font-medium text-slate-800 truncate">{c.fullName}</p>
                       <p className="text-xs text-slate-400 truncate">{[c.role, c.company].filter(Boolean).join(' · ') || '—'}</p>
                     </div>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-400" suppressHydrationWarning>
                       {c.lastContacted ? `${Math.floor((nowMs - new Date(c.lastContacted).getTime()) / 86_400_000)}d ago` : 'Never'}
                     </span>
                   </Link>

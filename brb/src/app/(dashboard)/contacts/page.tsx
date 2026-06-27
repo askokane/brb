@@ -140,7 +140,7 @@ export default function ContactsPage() {
                 {c.tagIds.map((tid) => tagMap[tid] && <TagPill key={tid} tag={tagMap[tid]} />)}
               </div>
 
-              <span className="text-xs text-slate-400 w-16 text-right hidden sm:block">{timeAgo(c.lastContacted)}</span>
+              <span className="text-xs text-slate-400 w-16 text-right hidden sm:block" suppressHydrationWarning>{timeAgo(c.lastContacted)}</span>
 
               <div className="relative">
                 <button
