@@ -28,13 +28,13 @@ The result is outreach that feels hand-crafted but takes seconds instead of hour
 | Framework | Next.js 14 (App Router) | File-based routing, server components for DB reads, API routes for backend logic, strong ecosystem |
 | Language | TypeScript | End-to-end type safety; eliminates entire classes of bugs in form handling and API contracts |
 | Styling | Tailwind CSS + shadcn/ui | Utility-first + accessible, unstyled components. Faster than a component library; more consistent than raw CSS |
-| Database | Supabase (Postgres) | Managed Postgres with row-level security, built-in auth, realtime subscriptions, storage — all in one |
-| ORM | Prisma | Type-safe DB access with migration tooling; pairs well with Supabase Postgres |
-| Auth | Supabase Auth | OAuth (Google, LinkedIn), magic link, session management — no custom auth plumbing needed |
+| Database | InsForge (Postgres) | Agent-native BaaS with Postgres, auth, storage, realtime, edge functions, and AI gateway in one SDK. 1.6× faster agent task completion, 30% fewer tokens vs Supabase. YC-backed. |
+| ORM | Prisma | Type-safe DB access with migration tooling; pairs with InsForge's underlying Postgres |
+| Auth | InsForge Auth | Email/password, OAuth (Google, LinkedIn), magic link, JWT sessions — same surface area as Supabase Auth |
 | AI | OpenAI API (GPT-4o) | Best-in-class instruction-following for personalization; structured output via `response_format: json_object` |
 | Email | Resend | Developer-first, React Email templates, excellent deliverability, simple SDK |
 | WhatsApp | Twilio WhatsApp Business API | More mature SDK than Meta Cloud API directly; better error handling and webhooks |
-| File Storage | Supabase Storage | Co-located with DB; handles contact photo uploads and CSV imports |
+| File Storage | InsForge Storage | Co-located with DB; handles contact photo uploads and CSV imports |
 | URL Scraping | Firecrawl / Cheerio | Firecrawl for JS-heavy pages; Cheerio as fallback for static pages |
 | LinkedIn Data | Proxycurl API | Only legitimate API wrapper for LinkedIn profile data; PhantomBuster as alternative |
 | QR Codes | `qrcode` npm package | Lightweight, no external service needed |
@@ -67,14 +67,15 @@ The result is outreach that feels hand-crafted but takes seconds instead of hour
          │               │                  │
          ▼               ▼                  ▼
 ┌──────────────┐  ┌─────────────┐  ┌───────────────────────────────┐
-│  SUPABASE    │  │  AI LAYER   │  │       MESSAGING LAYER         │
+│  INSFORGE    │  │  AI LAYER   │  │       MESSAGING LAYER         │
 │              │  │             │  │                               │
 │  Postgres    │  │ OpenAI API  │  │  Resend (email)               │
 │  Auth        │  │ GPT-4o      │  │  Twilio WhatsApp Business     │
 │  Storage     │  │             │  │                               │
 │  Realtime    │  │ Firecrawl   │  │  Webhooks ← inbound replies   │
-│  (Prisma ORM)│  │ (URL scrape)│  │                               │
-└──────────────┘  └─────────────┘  └───────────────────────────────┘
+│  AI Gateway  │  │ (URL scrape)│  │                               │
+│  (Prisma ORM)│  └─────────────┘  └───────────────────────────────┘
+└──────────────┘
          │
          ▼
 ┌──────────────────────────┐
@@ -282,7 +283,7 @@ Goal: Prove the core loop. A user can import contacts, tag them, paste a URL, ge
 
 | Feature | Details |
 |---|---|
-| Auth | Supabase Auth — Google OAuth + email magic link |
+| Auth | InsForge Auth — Google OAuth + email magic link |
 | Onboarding flow | 5-step wizard: name/role, networking goal, tone-of-voice prompts (3–5 Hinge-style questions), max active contacts, first tag group |
 | Contact management | Manual entry form + CSV import (map columns to schema fields) |
 | Tagging | Create/assign tags; filter contacts by tag |
@@ -406,9 +407,9 @@ brb/
 │       └── ConfirmDialog.tsx
 ├── lib/
 │   ├── prisma.ts                    # Prisma client singleton
-│   ├── supabase/
-│   │   ├── client.ts                # Browser client
-│   │   └── server.ts                # Server-side client
+│   ├── insforge/
+│   │   ├── client.ts                # Browser client (@insforge/sdk)
+│   │   └── server.ts                # Server-side client (service role key)
 │   ├── ai/
 │   │   ├── summarize.ts             # URL content summarization
 │   │   ├── personalize.ts           # Per-recipient message generation
@@ -736,12 +737,12 @@ Storing contact data for EU users without consent is a GDPR violation. **Mitigat
 ## Appendix A: Environment Variables
 
 ```bash
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+# InsForge
+NEXT_PUBLIC_INSFORGE_URL=https://your-project.us-east.insforge.app
+NEXT_PUBLIC_INSFORGE_ANON_KEY=
+INSFORGE_SERVICE_ROLE_KEY=
 
-# Database
+# Database (Prisma — points to InsForge Postgres)
 DATABASE_URL=
 
 # OpenAI
@@ -773,7 +774,7 @@ CRON_SECRET=                          # shared secret for Vercel cron auth
 
 | Service | Free Tier | Paid |
 |---|---|---|
-| Supabase | 500MB DB, 2 projects | $25/mo Pro |
+| InsForge | 500MB DB, 50K MAU free | $25/mo Pro (8GB DB, AI credits included) |
 | OpenAI GPT-4o-mini | Pay-as-you-go | ~$0.15/million input tokens |
 | Resend | 3,000 emails/mo | $20/mo for 50K |
 | Twilio WhatsApp | First 1,000 conversations/mo free (trial) | ~$0.005/message |

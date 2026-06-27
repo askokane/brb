@@ -51,7 +51,7 @@ brb/
 │   │   ├── onboarding/       # Onboarding step components
 │   │   └── shared/           # EmptyState, LoadingSpinner, ConfirmDialog
 │   ├── lib/
-│   │   ├── supabase.ts       # Supabase client (browser + server)
+│   │   ├── insforge.ts       # InsForge client (browser + server)
 │   │   ├── openai.ts         # OpenAI client
 │   │   ├── utils.ts          # cn() and other generic utilities
 │   │   ├── ai/               # summarize, personalize, reply-suggest
@@ -81,8 +81,8 @@ brb/
 | Framework | Next.js 14 (App Router) |
 | Language | TypeScript (strict) |
 | Styling | Tailwind CSS + shadcn/ui |
-| Database | Supabase (Postgres) via Prisma ORM |
-| Auth | Supabase Auth (Google OAuth + magic link) |
+| Database | InsForge (Postgres) via Prisma ORM |
+| Auth | InsForge Auth (Google OAuth + magic link) |
 | AI | OpenAI API — GPT-4o-mini for personalization, GPT-4o for analysis |
 | Email | Resend + React Email |
 | WhatsApp | Twilio WhatsApp Business API |
@@ -114,7 +114,7 @@ npx prisma studio                                # Browser UI for the database
 ## Environment Setup
 
 1. Copy `.env.local.example` → `.env.local`
-2. Fill in your Supabase URL and anon key (get from Supabase dashboard → Project Settings → API)
+2. Fill in your InsForge URL and anon key (get from InsForge dashboard → Project Settings → API)
 3. Add your OpenAI API key
 4. For email: add Resend API key
 5. Remaining keys (Twilio, Proxycurl, Firecrawl) can be left blank until those features are being built
@@ -126,7 +126,7 @@ Never commit `.env.local`. It is in `.gitignore`.
 ## Architecture Notes
 
 ### Auth
-All protected routes are guarded by `src/middleware.ts`. Unauthenticated requests are redirected to `/login`. API routes must call `createSupabaseClient()` from `src/lib/supabase.ts` and check for a valid session at the top of every handler.
+All protected routes are guarded by `src/middleware.ts`. Unauthenticated requests are redirected to `/login`. API routes must call `createInsforgeClient()` from `src/lib/insforge.ts` and check for a valid session at the top of every handler. InsForge Auth returns a JWT — verify it server-side using the service role key.
 
 ### AI personalization
 The broadcast flow calls `/api/ai/personalize` with a list of contacts and the scraped URL summary. This endpoint makes a **single batched OpenAI call** (structured output, JSON array) — not one call per contact. This is important for cost and latency.
