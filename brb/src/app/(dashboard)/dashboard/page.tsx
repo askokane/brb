@@ -1,9 +1,11 @@
 'use client'
 import Link from 'next/link'
+import { useMemo } from 'react'
 import { useOnboardingStore } from '@/store/onboarding'
+import { useAppStore } from '@/store/app'
 import EmptyState from '@/components/shared/EmptyState'
+import Avatar from '@/components/shared/Avatar'
 import { buttonVariants } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
   Users,
@@ -16,18 +18,10 @@ import {
   ChevronRight,
   Clock,
   Calendar,
+  Mail,
+  MessageSquare,
+  CheckCircle2,
 } from 'lucide-react'
-
-const GOAL_LABELS: Record<string, string> = {
-  investors: 'Investors',
-  clients: 'Clients',
-  friends: 'College Friends',
-  colleagues: 'Ex-Colleagues',
-  startup: 'Startup Network',
-  collaborators: 'Collaborators',
-  industry: 'Industry',
-  mentors: 'Mentors & Advisors',
-}
 
 function StatCard({
   label,
@@ -98,14 +92,40 @@ function StreakRing({ days }: { days: number }) {
   )
 }
 
+function ChannelIcon({ channel }: { channel: 'email' | 'whatsapp' | 'both' }) {
+  if (channel === 'whatsapp') return <MessageSquare className="w-3.5 h-3.5" />
+  if (channel === 'both') return <span className="flex gap-0.5"><Mail className="w-3.5 h-3.5" /><MessageSquare className="w-3.5 h-3.5" /></span>
+  return <Mail className="w-3.5 h-3.5" />
+}
+
 export default function DashboardPage() {
-  const { profile, goals, capacity } = useOnboardingStore()
+  const { profile, capacity } = useOnboardingStore()
+  const { contacts, tags, broadcasts } = useAppStore()
   const firstName = profile.fullName?.split(' ')[0] || 'there'
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  const nowMs = new Date().getTime()
+
+  const activeContacts = contacts.filter((c) => !c.doNotContact).length
+  const sentBroadcasts = broadcasts.filter((b) => b.status === 'sent')
+  const avgOpen = sentBroadcasts.length
+    ? Math.round(sentBroadcasts.reduce((s, b) => s + (b.openRate ?? 0), 0) / sentBroadcasts.length)
+    : null
+
+  // Overdue = never contacted, or longest since last touch. Top 3.
+  const dueToReachOut = useMemo(() => {
+    return [...contacts]
+      .filter((c) => !c.doNotContact)
+      .sort((a, b) => {
+        const at = a.lastContacted ? new Date(a.lastContacted).getTime() : 0
+        const bt = b.lastContacted ? new Date(b.lastContacted).getTime() : 0
+        return at - bt
+      })
+      .slice(0, 3)
+  }, [contacts])
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -123,9 +143,9 @@ export default function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Active Contacts" value={0} sub={`Goal: ${capacity.maxContacts}`} icon={Users} accent />
-        <StatCard label="Broadcasts Sent" value={0} sub="All time" icon={Send} />
-        <StatCard label="Avg. Open Rate" value="—" sub="No data yet" icon={TrendingUp} />
+        <StatCard label="Active Contacts" value={activeContacts} sub={`Goal: ${capacity.maxContacts}`} icon={Users} accent />
+        <StatCard label="Broadcasts Sent" value={sentBroadcasts.length} sub="All time" icon={Send} />
+        <StatCard label="Avg. Open Rate" value={avgOpen != null ? `${avgOpen}%` : '—'} sub={avgOpen != null ? 'across sent' : 'No data yet'} icon={TrendingUp} />
         <StatCard label="Streak" value={0} sub="days this week" icon={Flame} />
       </div>
 
@@ -138,23 +158,57 @@ export default function DashboardPage() {
           {/* Due to reach out */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
             <SectionHeader title="Due to reach out" href="/contacts" />
-            <EmptyState
-              icon={Clock}
-              title="No contacts yet"
-              description="Import contacts to see who you're due to reach out to."
-              action={{ label: '+ Import contacts', href: '/contacts/import' }}
-            />
+            {dueToReachOut.length === 0 ? (
+              <EmptyState
+                icon={Clock}
+                title="No contacts yet"
+                description="Import contacts to see who you're due to reach out to."
+                action={{ label: '+ Import contacts', href: '/contacts/import' }}
+              />
+            ) : (
+              <div className="space-y-1">
+                {dueToReachOut.map((c) => (
+                  <Link key={c.id} href={`/contacts/${c.id}`} className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors">
+                    <Avatar name={c.fullName} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-slate-800 truncate">{c.fullName}</p>
+                      <p className="text-xs text-slate-400 truncate">{[c.role, c.company].filter(Boolean).join(' · ') || '—'}</p>
+                    </div>
+                    <span className="text-xs text-slate-400">
+                      {c.lastContacted ? `${Math.floor((nowMs - new Date(c.lastContacted).getTime()) / 86_400_000)}d ago` : 'Never'}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Recent broadcasts */}
           <div className="rounded-2xl border border-slate-200 bg-white p-5">
             <SectionHeader title="Recent Broadcasts" href="/broadcast" />
-            <EmptyState
-              icon={Send}
-              title="No broadcasts yet"
-              description="Paste a link and send it to your network in seconds."
-              action={{ label: '+ New broadcast', href: '/broadcast/new' }}
-            />
+            {broadcasts.length === 0 ? (
+              <EmptyState
+                icon={Send}
+                title="No broadcasts yet"
+                description="Paste a link and send it to your network in seconds."
+                action={{ label: '+ New broadcast', href: '/broadcast/new' }}
+              />
+            ) : (
+              <div className="space-y-2">
+                {broadcasts.slice(0, 3).map((b) => (
+                  <Link key={b.id} href="/broadcast" className="block p-3 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-slate-800 truncate">{b.title}</p>
+                      {b.status === 'sent' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                    </div>
+                    <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                      <span className="inline-flex items-center gap-1"><ChannelIcon channel={b.channel} /> {b.channel}</span>
+                      <span>{b.recipients.length} sent</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -192,14 +246,19 @@ export default function DashboardPage() {
           </div>
 
           {/* Your tags */}
-          {goals.length > 0 && (
+          {tags.length > 0 && (
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <h2 className="text-sm font-semibold text-slate-800 mb-3">Your Tags</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold text-slate-800">Your Tags</h2>
+                <Link href="/tags" className="text-xs text-indigo-600 hover:underline">Manage</Link>
+              </div>
               <div className="flex flex-wrap gap-1.5">
-                {goals.map((g) => (
-                  <Badge key={g} variant="secondary" className="bg-indigo-50 text-indigo-700 border-none text-xs">
-                    {GOAL_LABELS[g] ?? g}
-                  </Badge>
+                {tags.map((t) => (
+                  <span key={t.id} className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium"
+                    style={{ backgroundColor: `${t.color}1a`, color: t.color }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+                    {t.name}
+                  </span>
                 ))}
               </div>
             </div>
