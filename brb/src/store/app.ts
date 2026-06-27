@@ -25,13 +25,47 @@ const SEED_CONTACTS: Contact[] = [
     bio: 'Early-stage investor focused on dev tools and AI infra.', notes: 'Met at YC demo day.',
     tagIds: ['investors', 'mentors'], source: 'linkedin', doNotContact: false,
     lastContacted: daysAgo(40), createdAt: daysAgo(120),
+    linkedin: {
+      headline: 'Partner at Sequoia Capital · Investing in dev tools & AI infrastructure',
+      summary:
+        'I back technical founders at the earliest stages, with a focus on developer tools, open-source businesses, and AI infrastructure. Before investing I spent 8 years building developer platforms, so I care a lot about the product and the people who use it.',
+      location: 'San Francisco, California, United States',
+      industry: 'Venture Capital & Private Equity',
+      avatarUrl: null,
+      experiences: [
+        { title: 'Partner', company: 'Sequoia Capital', dateRange: '2019 — Present', description: 'Lead seed and Series A investments in developer tools and AI infrastructure.' },
+        { title: 'Principal', company: 'Accel', dateRange: '2016 — 2019', description: 'Sourced and supported early-stage enterprise software investments.' },
+        { title: 'Product Lead, Developer Platform', company: 'Stripe', dateRange: '2012 — 2016', description: 'Built APIs and SDKs used by hundreds of thousands of developers.' },
+      ],
+      education: [
+        { school: 'Stanford University', degree: 'M.S.', field: 'Computer Science', dateRange: '2010 — 2012' },
+        { school: 'UC Berkeley', degree: 'B.S.', field: 'Electrical Engineering & Computer Science', dateRange: '2006 — 2010' },
+      ],
+      skills: ['Venture Capital', 'Developer Tools', 'AI/ML', 'Product Strategy', 'APIs', 'Go-to-Market', 'Open Source'],
+    },
   },
   {
     id: 'seed-marcus', fullName: 'Marcus Webb', email: 'marcus@acme.io', phone: null,
-    linkedinUrl: 'https://linkedin.com/in/marcuswebb', company: 'Acme Inc.', role: 'Eng Lead',
+    linkedinUrl: 'https://linkedin.com/in/marcuswebb', company: 'Acme Inc.', role: 'Engineering Lead',
     bio: 'Backend engineer, ex-Stripe. Loves Rust.', notes: '',
-    tagIds: ['clients'], source: 'manual', doNotContact: false,
+    tagIds: ['clients'], source: 'linkedin', doNotContact: false,
     lastContacted: daysAgo(8), createdAt: daysAgo(90),
+    linkedin: {
+      headline: 'Engineering Lead at Acme · Distributed systems & payments infrastructure',
+      summary:
+        'Backend engineer who likes hard problems in distributed systems. Currently leading the payments platform team at Acme. Previously at Stripe working on ledger reliability. Rust and Postgres enthusiast.',
+      location: 'Austin, Texas, United States',
+      industry: 'Computer Software',
+      avatarUrl: null,
+      experiences: [
+        { title: 'Engineering Lead, Payments Platform', company: 'Acme Inc.', dateRange: '2021 — Present', description: 'Lead a team of 7 building the core ledger and payout systems.' },
+        { title: 'Senior Software Engineer', company: 'Stripe', dateRange: '2017 — 2021', description: 'Worked on ledger consistency and reconciliation at scale.' },
+      ],
+      education: [
+        { school: 'University of Texas at Austin', degree: 'B.S.', field: 'Computer Science', dateRange: '2013 — 2017' },
+      ],
+      skills: ['Rust', 'PostgreSQL', 'Distributed Systems', 'Payments', 'Kubernetes', 'Go', 'System Design'],
+    },
   },
   {
     id: 'seed-priya', fullName: 'Priya Nair', email: 'priya.nair@gmail.com', phone: '+14155550133',
@@ -39,13 +73,30 @@ const SEED_CONTACTS: Contact[] = [
     bio: 'Design systems specialist.', notes: 'College roommate.',
     tagIds: ['friends'], source: 'csv', doNotContact: false,
     lastContacted: daysAgo(95), createdAt: daysAgo(200),
+    linkedin: null,
   },
   {
     id: 'seed-david', fullName: 'David Okafor', email: 'david@nextwave.vc', phone: null,
-    linkedinUrl: 'https://linkedin.com/in/davidokafor', company: 'NextWave', role: 'Founder',
+    linkedinUrl: 'https://linkedin.com/in/davidokafor', company: 'NextWave', role: 'Founder & CEO',
     bio: 'Building in climate tech.', notes: '',
-    tagIds: ['startup', 'friends'], source: 'manual', doNotContact: true,
+    tagIds: ['startup', 'friends'], source: 'linkedin', doNotContact: true,
     lastContacted: daysAgo(15), createdAt: daysAgo(60),
+    linkedin: {
+      headline: 'Founder & CEO at NextWave · Decarbonizing industrial supply chains',
+      summary:
+        'Founder working on software that helps manufacturers measure and cut their carbon footprint. Second-time founder; previously sold a logistics analytics startup. Always happy to talk to other climate and hardware founders.',
+      location: 'London, England, United Kingdom',
+      industry: 'Renewables & Environment',
+      avatarUrl: null,
+      experiences: [
+        { title: 'Founder & CEO', company: 'NextWave', dateRange: '2022 — Present', description: 'Building carbon accounting software for industrial supply chains.' },
+        { title: 'Co-founder', company: 'Routely (acquired)', dateRange: '2018 — 2022', description: 'Logistics analytics platform, acquired by a fleet management company.' },
+      ],
+      education: [
+        { school: 'Imperial College London', degree: 'M.Eng.', field: 'Mechanical Engineering', dateRange: '2013 — 2017' },
+      ],
+      skills: ['Climate Tech', 'Entrepreneurship', 'Supply Chain', 'Fundraising', 'Product Management'],
+    },
   },
   {
     id: 'seed-elena', fullName: 'Elena Rossi', email: 'elena@rossi.design', phone: '+393331234567',
@@ -53,6 +104,22 @@ const SEED_CONTACTS: Contact[] = [
     bio: 'Brand and motion design.', notes: 'Potential collaborator.',
     tagIds: ['clients', 'startup'], source: 'linkedin', doNotContact: false,
     lastContacted: null, createdAt: daysAgo(30),
+    linkedin: {
+      headline: 'Creative Director at Rossi Studio · Brand identity & motion for tech',
+      summary:
+        'Creative director helping startups and scale-ups build memorable brands. I lead identity, motion, and product storytelling. Previously in-house design lead at a Series B fintech.',
+      location: 'Milan, Lombardy, Italy',
+      industry: 'Design',
+      avatarUrl: null,
+      experiences: [
+        { title: 'Creative Director', company: 'Rossi Studio', dateRange: '2020 — Present', description: 'Run a small studio doing brand and motion work for tech companies.' },
+        { title: 'Design Lead', company: 'Soldo', dateRange: '2017 — 2020', description: 'Led brand and product design through a Series B raise.' },
+      ],
+      education: [
+        { school: 'Politecnico di Milano', degree: 'B.A.', field: 'Communication Design', dateRange: '2011 — 2015' },
+      ],
+      skills: ['Brand Identity', 'Motion Design', 'Art Direction', 'Figma', 'Design Systems', 'Storytelling'],
+    },
   },
 ]
 
@@ -126,6 +193,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         doNotContact: false,
         lastContacted: null,
         createdAt: nowIso(),
+        linkedin: r.linkedin ?? null,
       }))
     set((s) => ({ contacts: [...created, ...s.contacts] }))
     return created.length

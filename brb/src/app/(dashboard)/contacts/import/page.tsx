@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import type { Contact } from '@/types'
+import type { Contact, LinkedInProfile } from '@/types'
 import { ArrowLeft, Upload, FileText, Link2, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react'
 
 // The Proxycurl route requires canonical https://www.linkedin.com/in/ URLs.
@@ -98,6 +98,7 @@ export default function ImportContactsPage() {
       const enriched = (data.contacts ?? []) as Array<{
         fullName: string; email: string | null; phone: string | null
         linkedinUrl: string; company: string | null; role: string | null; bio: string | null
+        linkedin?: LinkedInProfile | null
       }>
 
       if (enriched.length === 0) {
@@ -119,6 +120,7 @@ export default function ImportContactsPage() {
           company: c.company,
           role: c.role,
           bio: c.bio,
+          linkedin: c.linkedin ?? null,
         })),
         'linkedin'
       )

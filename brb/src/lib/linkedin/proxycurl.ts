@@ -174,6 +174,8 @@ export interface PersonEndpointResponse {
 
 // ── Normalized shape saved to our DB ─────────────────────────────────────────
 
+import type { LinkedInProfile } from '@/types'
+
 export interface NormalizedContact {
   fullName: string
   email: string | null
@@ -184,6 +186,7 @@ export interface NormalizedContact {
   bio: string | null
   avatarUrl: string | null
   source: 'linkedin'
+  linkedin: LinkedInProfile
 }
 
 // ── Proxycurl API client ──────────────────────────────────────────────────────
@@ -246,6 +249,54 @@ export function normalizeProfile(
     bio: buildBio(profile),
     avatarUrl: profile.profile_pic_url ?? null,
     source: 'linkedin',
+    linkedin: extractLinkedInProfile(profile),
+  }
+}
+
+// Year-only date label from a Proxycurl date object.
+function fmtYear(d: ProxycurlDate | null): string | null {
+  return d?.year ? String(d.year) : null
+}
+
+function fmtRange(start: ProxycurlDate | null, end: ProxycurlDate | null): string | null {
+  const s = fmtYear(start)
+  const e = end ? fmtYear(end) : 'Present'
+  if (!s && (!end || e === 'Present')) return end ? null : 'Present'
+  return [s, e].filter(Boolean).join(' — ') || null
+}
+
+// Keep the rich, structured LinkedIn data so the contact page can render
+// proper sections (experience, education, skills) rather than a flat blob.
+export function extractLinkedInProfile(profile: PersonEndpointResponse): LinkedInProfile {
+  const location = [profile.city, profile.state, profile.country_full_name]
+    .filter(Boolean)
+    .join(', ')
+
+  return {
+    headline: profile.headline ?? null,
+    summary: profile.summary ?? null,
+    location: location || null,
+    industry: profile.industry ?? null,
+    avatarUrl: profile.profile_pic_url ?? null,
+    experiences: (profile.experiences ?? [])
+      .filter((e) => e.title || e.company)
+      .slice(0, 6)
+      .map((e) => ({
+        title: e.title,
+        company: e.company,
+        dateRange: fmtRange(e.starts_at, e.ends_at),
+        description: e.description,
+      })),
+    education: (profile.education ?? [])
+      .filter((e) => e.school)
+      .slice(0, 4)
+      .map((e) => ({
+        school: e.school,
+        degree: e.degree_name,
+        field: e.field_of_study,
+        dateRange: fmtRange(e.starts_at, e.ends_at),
+      })),
+    skills: (profile.skills ?? []).slice(0, 20),
   }
 }
 

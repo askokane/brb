@@ -2,6 +2,33 @@
 
 export type ContactSource = 'manual' | 'csv' | 'linkedin' | 'qr'
 
+// Structured data scraped from LinkedIn (via Proxycurl). Optional — only
+// present on contacts imported/enriched from a LinkedIn profile.
+export interface LinkedInExperience {
+  title: string | null
+  company: string | null
+  dateRange: string | null // e.g. "2021 — Present"
+  description: string | null
+}
+
+export interface LinkedInEducation {
+  school: string | null
+  degree: string | null
+  field: string | null
+  dateRange: string | null
+}
+
+export interface LinkedInProfile {
+  headline: string | null
+  summary: string | null // the "About" section
+  location: string | null
+  industry: string | null
+  avatarUrl: string | null
+  experiences: LinkedInExperience[]
+  education: LinkedInEducation[]
+  skills: string[]
+}
+
 export interface Contact {
   id: string
   fullName: string
@@ -17,6 +44,7 @@ export interface Contact {
   doNotContact: boolean
   lastContacted: string | null // ISO date
   createdAt: string
+  linkedin?: LinkedInProfile | null
 }
 
 export interface Tag {

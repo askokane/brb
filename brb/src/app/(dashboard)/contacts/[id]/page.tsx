@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAppStore } from '@/store/app'
 import Avatar from '@/components/shared/Avatar'
 import TagSelector from '@/components/contacts/TagSelector'
+import LinkedInSections from '@/components/contacts/LinkedInSections'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
@@ -58,6 +59,9 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
             {(contact.role || contact.company) && (
               <p className="text-sm text-slate-500 mt-0.5">{[contact.role, contact.company].filter(Boolean).join(' · ')}</p>
             )}
+            {contact.linkedin?.headline && (
+              <p className="text-xs text-slate-400 mt-1 italic">{contact.linkedin.headline}</p>
+            )}
             <div className="flex flex-col gap-0.5 mt-2 text-sm text-slate-500">
               {contact.email && <span>{contact.email}</span>}
               {contact.phone && <span>{contact.phone}</span>}
@@ -73,6 +77,9 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
           </span>
         </div>
       </div>
+
+      {/* LinkedIn-scraped sections: what they do, about, experience, education, skills */}
+      <LinkedInSections contact={contact} />
 
       {/* AI engagement tip */}
       <div className="rounded-2xl border border-indigo-100 bg-indigo-50/50 p-5">
