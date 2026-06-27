@@ -7,61 +7,88 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import type { Contact, LinkedInProfile } from '@/types'
-import { ArrowLeft, Upload, FileText, Link2, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react'
+import type { Contact } from '@/types'
+import { ArrowLeft, Upload, FileText, Link2, CheckCircle2, ExternalLink } from 'lucide-react'
 
-// The Proxycurl route requires canonical https://www.linkedin.com/in/ URLs.
-// Accept the looser forms people actually paste and normalize them; return null if not a profile URL.
-function normalizeLinkedInUrl(raw: string): string | null {
-  if (!raw.includes('linkedin.com/in/')) return null
-  const slug = raw.split('/in/')[1]?.split(/[?#]/)[0]?.replace(/\/+$/, '')
-  if (!slug) return null
-  return `https://www.linkedin.com/in/${slug}`
+// Split a CSV line, honoring double-quoted fields (LinkedIn quotes some values).
+function splitCsvLine(line: string): string[] {
+  const out: string[] = []
+  let cur = ''
+  let inQuotes = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { cur += '"'; i++ }
+      else inQuotes = !inQuotes
+    } else if (ch === ',' && !inQuotes) {
+      out.push(cur); cur = ''
+    } else {
+      cur += ch
+    }
+  }
+  out.push(cur)
+  return out
 }
 
-// Minimal CSV parser: header row maps to known fields by fuzzy name.
+// Parses a generic contacts CSV *and* LinkedIn's "Connections" export, which
+// prepends a few "Notes:" lines before the header and splits the name into
+// First Name / Last Name columns.
 function parseCsv(text: string): Array<Partial<Contact> & { fullName: string }> {
-  const lines = text.trim().split(/\r?\n/).filter(Boolean)
-  if (lines.length < 2) return []
-  const headers = lines[0].split(',').map((h) => h.trim().toLowerCase())
-  const idx = (keys: string[]) => headers.findIndex((h) => keys.some((k) => h.includes(k)))
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+
+  // Find the real header row (skips LinkedIn's preamble).
+  const headerIdx = lines.findIndex((l) => {
+    const low = l.toLowerCase()
+    return (low.includes('name') || low.includes('email')) && low.includes(',')
+  })
+  if (headerIdx === -1 || headerIdx >= lines.length - 1) return []
+
+  const headers = splitCsvLine(lines[headerIdx]).map((h) => h.trim().toLowerCase())
+  const find = (pred: (h: string) => boolean) => headers.findIndex(pred)
   const map = {
-    name: idx(['name', 'full name']),
-    email: idx(['email']),
-    phone: idx(['phone', 'mobile']),
-    company: idx(['company', 'organization']),
-    role: idx(['role', 'title', 'position']),
-    linkedin: idx(['linkedin', 'profile']),
+    full: find((h) => h === 'name' || h.includes('full name')),
+    first: find((h) => h.includes('first name') || h === 'first'),
+    last: find((h) => h.includes('last name') || h === 'last'),
+    email: find((h) => h.includes('email')),
+    phone: find((h) => h.includes('phone') || h.includes('mobile')),
+    company: find((h) => h.includes('company') || h.includes('organization')),
+    role: find((h) => h.includes('position') || h.includes('title') || h.includes('role')),
+    linkedin: find((h) => h === 'url' || h.includes('linkedin') || h.includes('profile')),
   }
-  return lines.slice(1).map((line) => {
-    const cells = line.split(',').map((c) => c.trim())
-    const get = (i: number) => (i >= 0 ? cells[i] || undefined : undefined)
-    return {
-      fullName: get(map.name) ?? cells[0] ?? '',
-      email: get(map.email) ?? null,
-      phone: get(map.phone) ?? null,
-      company: get(map.company) ?? null,
-      role: get(map.role) ?? null,
-      linkedinUrl: get(map.linkedin) ?? null,
-    }
-  }).filter((r) => r.fullName)
+
+  return lines
+    .slice(headerIdx + 1)
+    .map((line) => {
+      const cells = splitCsvLine(line)
+      const get = (i: number) => (i >= 0 ? cells[i]?.trim() || undefined : undefined)
+
+      let fullName = get(map.full)
+      if (!fullName && (map.first >= 0 || map.last >= 0)) {
+        fullName = [get(map.first), get(map.last)].filter(Boolean).join(' ')
+      }
+      if (!fullName) fullName = cells[0]?.trim() ?? ''
+
+      return {
+        fullName,
+        email: get(map.email) ?? null,
+        phone: get(map.phone) ?? null,
+        company: get(map.company) ?? null,
+        role: get(map.role) ?? null,
+        linkedinUrl: get(map.linkedin) ?? null,
+      }
+    })
+    .filter((r) => r.fullName)
 }
 
 export default function ImportContactsPage() {
   const router = useRouter()
   const importContacts = useAppStore((s) => s.importContacts)
 
+  const [tab, setTab] = useState('csv')
   const [csvText, setCsvText] = useState('')
-  const [linkedinText, setLinkedinText] = useState('')
   const [done, setDone] = useState<number | null>(null)
-  const [importing, setImporting] = useState(false)
-  const [error, setError] = useState('')
 
   const csvPreview = csvText.trim() ? parseCsv(csvText) : []
-  const linkedinUrls = linkedinText
-    .split(/\r?\n/)
-    .map((l) => normalizeLinkedInUrl(l.trim()))
-    .filter((l): l is string => l !== null)
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -76,62 +103,6 @@ export default function ImportContactsPage() {
     setDone(n)
   }
 
-  // Calls the Proxycurl-backed enrichment route so each contact gets real
-  // role / company / bio. Requires PROXYCURL_API_KEY on the server — without it
-  // the route errors and we surface that clearly instead of creating empty contacts.
-  async function importLinkedin() {
-    setImporting(true)
-    setError('')
-    try {
-      const res = await fetch('/api/contacts/import/linkedin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urls: linkedinUrls }),
-      })
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error ?? `Import failed (${res.status})`)
-        return
-      }
-
-      const enriched = (data.contacts ?? []) as Array<{
-        fullName: string; email: string | null; phone: string | null
-        linkedinUrl: string; company: string | null; role: string | null; bio: string | null
-        linkedin?: LinkedInProfile | null
-      }>
-
-      if (enriched.length === 0) {
-        const first = data.errors?.[0]?.error
-        setError(
-          first?.includes('PROXYCURL_API_KEY')
-            ? 'LinkedIn enrichment needs a Proxycurl API key. Add PROXYCURL_API_KEY to .env.local (see Settings → Integrations), then try again.'
-            : first ?? 'No profiles could be enriched.'
-        )
-        return
-      }
-
-      const n = importContacts(
-        enriched.map((c) => ({
-          fullName: c.fullName,
-          email: c.email,
-          phone: c.phone,
-          linkedinUrl: c.linkedinUrl,
-          company: c.company,
-          role: c.role,
-          bio: c.bio,
-          linkedin: c.linkedin ?? null,
-        })),
-        'linkedin'
-      )
-      setDone(n)
-    } catch {
-      setError('Could not reach the import service. Check your connection and try again.')
-    } finally {
-      setImporting(false)
-    }
-  }
-
   if (done !== null) {
     return (
       <div className="max-w-md mx-auto text-center py-20 space-y-4">
@@ -142,7 +113,7 @@ export default function ImportContactsPage() {
           <Button onClick={() => router.push('/contacts')} className="bg-indigo-600 hover:bg-indigo-700 text-white">
             View contacts
           </Button>
-          <Button variant="outline" onClick={() => { setDone(null); setCsvText(''); setLinkedinText('') }}>
+          <Button variant="outline" onClick={() => { setDone(null); setCsvText('') }}>
             Import more
           </Button>
         </div>
@@ -158,7 +129,7 @@ export default function ImportContactsPage() {
 
       <h1 className="text-2xl font-bold text-slate-900">Import contacts</h1>
 
-      <Tabs defaultValue="csv">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as string)}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="csv" className="gap-1.5"><FileText className="w-4 h-4" /> CSV</TabsTrigger>
           <TabsTrigger value="linkedin" className="gap-1.5"><Link2 className="w-4 h-4" /> LinkedIn</TabsTrigger>
@@ -184,7 +155,9 @@ export default function ImportContactsPage() {
               rows={6}
               className="font-mono text-xs"
             />
-            <p className="text-xs text-slate-400">First row should be headers. We map name, email, phone, company, role, and LinkedIn automatically.</p>
+            <p className="text-xs text-slate-400">
+              Works with a plain CSV or LinkedIn&apos;s Connections export. We auto-map name, email, phone, company, role, and profile URL.
+            </p>
           </div>
 
           {csvPreview.length > 0 && (
@@ -196,7 +169,7 @@ export default function ImportContactsPage() {
                 {csvPreview.slice(0, 8).map((r, i) => (
                   <div key={i} className="px-4 py-2 text-sm flex justify-between">
                     <span className="font-medium text-slate-700">{r.fullName}</span>
-                    <span className="text-slate-400 text-xs">{r.email ?? r.company ?? ''}</span>
+                    <span className="text-slate-400 text-xs">{[r.role, r.company].filter(Boolean).join(' · ') || r.email || ''}</span>
                   </div>
                 ))}
               </div>
@@ -208,36 +181,32 @@ export default function ImportContactsPage() {
           </Button>
         </TabsContent>
 
-        {/* LinkedIn */}
+        {/* LinkedIn — guides to the free, compliant export (no scraping API) */}
         <TabsContent value="linkedin" className="space-y-4 pt-4">
-          <div className="space-y-1.5">
-            <Label>LinkedIn profile URLs</Label>
-            <Textarea
-              value={linkedinText}
-              onChange={(e) => setLinkedinText(e.target.value)}
-              placeholder={'https://linkedin.com/in/janedoe\nhttps://linkedin.com/in/johnsmith'}
-              rows={6}
-              className="font-mono text-xs"
-            />
-            <p className="text-xs text-slate-400">One URL per line. Full profile enrichment (role, company, bio) runs through Proxycurl once its API key is configured.</p>
-          </div>
-
-          {linkedinUrls.length > 0 && (
-            <p className="text-xs text-slate-500">{linkedinUrls.length} valid URL{linkedinUrls.length === 1 ? '' : 's'} detected</p>
-          )}
-
-          {error && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>{error}</span>
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-4">
+            <p className="text-sm text-slate-600">
+              LinkedIn no longer allows third-party tools to pull profile data by URL. The free, compliant way to bring
+              your network in is LinkedIn&apos;s own <span className="font-medium">Connections export</span>:
+            </p>
+            <ol className="space-y-2 text-sm text-slate-600 list-decimal list-inside">
+              <li>On LinkedIn, go to <span className="font-medium">Settings &amp; Privacy → Data Privacy → Get a copy of your data</span>.</li>
+              <li>Tick <span className="font-medium">Connections</span> and request the archive.</li>
+              <li>LinkedIn emails you a <span className="font-mono text-xs">Connections.csv</span> (name, company, position, profile URL).</li>
+              <li>Upload it on the CSV tab — we handle LinkedIn&apos;s format automatically.</li>
+            </ol>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <a
+                href="https://www.linkedin.com/mypreferences/d/download-my-data"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:underline"
+              >
+                Open LinkedIn data export <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
-          )}
-
-          <Button onClick={importLinkedin} disabled={linkedinUrls.length === 0 || importing} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white gap-2 disabled:opacity-40">
-            {importing && <Loader2 className="w-4 h-4 animate-spin" />}
-            {importing
-              ? 'Fetching profiles…'
-              : `Import ${linkedinUrls.length > 0 ? `${linkedinUrls.length} ` : ''}profile${linkedinUrls.length === 1 ? '' : 's'}`}
+          </div>
+          <Button onClick={() => setTab('csv')} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white">
+            I have my CSV — go to upload
           </Button>
         </TabsContent>
       </Tabs>

@@ -3,14 +3,37 @@ import { useRouter } from 'next/navigation'
 import { useOnboardingStore } from '@/store/onboarding'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Eye, EyeOff } from 'lucide-react'
-import { useState } from 'react'
+import { Eye, EyeOff, Link2, Check } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export default function Step1Page() {
   const router = useRouter()
   const { profile, setProfile } = useOnboardingStore()
   const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [linkedinNote, setLinkedinNote] = useState<'ok' | 'unconfigured' | 'error' | null>(null)
+
+  // On return from the LinkedIn OAuth flow, pull the captured profile and prefill.
+  // All note updates resolve through the async /me response so nothing sets state
+  // synchronously inside the effect.
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get('linkedin')
+    if (!status) return
+    // Clean the query string so a refresh doesn't re-trigger.
+    window.history.replaceState({}, '', '/onboarding/step-1')
+
+    fetch('/api/auth/linkedin/me')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.profile) {
+          setProfile({ fullName: d.profile.fullName || '', email: d.profile.email || '' })
+          setLinkedinNote('ok')
+        } else {
+          setLinkedinNote(status === 'unconfigured' ? 'unconfigured' : 'error')
+        }
+      })
+      .catch(() => setLinkedinNote('error'))
+  }, [setProfile])
 
   function validate() {
     const e: Record<string, string> = {}
@@ -34,6 +57,34 @@ export default function Step1Page() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold text-slate-900">Create your account</h1>
         <p className="text-slate-500">Let&apos;s get the basics set up so we can personalize your experience.</p>
+      </div>
+
+      {/* Sign in with LinkedIn (official OpenID Connect) — prefills name + email */}
+      <div className="space-y-3">
+        <a
+          href="/api/auth/linkedin"
+          className="flex items-center justify-center gap-2 w-full h-12 rounded-lg bg-[#0a66c2] hover:bg-[#004182] text-white text-sm font-medium transition-colors"
+        >
+          <Link2 className="w-4 h-4" /> Continue with LinkedIn
+        </a>
+
+        {linkedinNote === 'ok' && (
+          <p className="flex items-center gap-1.5 text-xs text-emerald-600">
+            <Check className="w-3.5 h-3.5" /> Pulled your name and email from LinkedIn — just set a password below.
+          </p>
+        )}
+        {linkedinNote === 'unconfigured' && (
+          <p className="text-xs text-amber-600">
+            LinkedIn sign-in isn&apos;t configured yet (set LINKEDIN_CLIENT_ID/SECRET). Use email for now.
+          </p>
+        )}
+        {linkedinNote === 'error' && (
+          <p className="text-xs text-red-500">LinkedIn sign-in didn&apos;t complete. Use email instead.</p>
+        )}
+
+        <div className="flex items-center gap-3 text-xs text-slate-400">
+          <span className="flex-1 h-px bg-slate-200" /> or with email <span className="flex-1 h-px bg-slate-200" />
+        </div>
       </div>
 
       <div className="space-y-4">

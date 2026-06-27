@@ -140,7 +140,7 @@ export default function SettingsPage() {
         <TabsContent value="integrations" className="space-y-3 pt-4">
           <IntegrationRow icon={Mail} name="Resend (Email)" description="Verify a sending domain to deliver broadcasts." connected={false} configKey="RESEND_API_KEY" />
           <IntegrationRow icon={MessageSquare} name="Twilio (WhatsApp)" description="Connect a WhatsApp Business number." connected={false} configKey="TWILIO_AUTH_TOKEN" />
-          <IntegrationRow icon={Link2} name="Proxycurl (LinkedIn)" description="Enrich imported profiles with role, company, and bio." connected={false} configKey="PROXYCURL_API_KEY" />
+          <IntegrationRow icon={Link2} name="Sign in with LinkedIn" description="Let users sign in and prefill their own profile (OpenID Connect)." connected={false} configKey="LINKEDIN_CLIENT_ID" />
           <IntegrationRow icon={Sparkles} name="OpenAI" description="Powers summarization, personalization, and reply suggestions." connected={false} configKey="OPENAI_API_KEY" />
           <p className="text-xs text-slate-400 pt-2 flex items-center gap-1">
             Add keys in <code className="font-mono">.env.local</code>. See
