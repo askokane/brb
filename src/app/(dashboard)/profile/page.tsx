@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { useOnboardingStore } from '@/store/onboarding'
+import { useOnboardingStore, selectUserProfile } from '@/store/onboarding'
+import { putProfile } from '@/lib/api/profile-client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -61,6 +62,8 @@ export default function ProfilePage() {
   function saveProfile() {
     setProfile(draft)
     setEditing(false)
+    // zustand updates synchronously, so getState() already reflects the draft.
+    void putProfile(selectUserProfile(useOnboardingStore.getState()))
   }
 
   function cancelEdit() {

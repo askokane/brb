@@ -1,6 +1,8 @@
 'use client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useOnboardingStore } from '@/store/onboarding'
+import { useOnboardingStore, selectUserProfile } from '@/store/onboarding'
+import { putProfile } from '@/lib/api/profile-client'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { CheckCircle2 } from 'lucide-react'
@@ -19,9 +21,11 @@ const GOAL_LABELS: Record<string, string> = {
 export default function Step5Page() {
   const router = useRouter()
   const { profile, goals, tone, capacity } = useOnboardingStore()
+  const [finishing, setFinishing] = useState(false)
 
-  function handleFinish() {
-    // TODO: submit to /api/onboarding and create account via InsForge Auth
+  async function handleFinish() {
+    setFinishing(true)
+    await putProfile(selectUserProfile(useOnboardingStore.getState()))
     router.push('/dashboard')
   }
 
@@ -87,9 +91,10 @@ export default function Step5Page() {
 
       <Button
         onClick={handleFinish}
+        disabled={finishing}
         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 text-base"
       >
-        Go to my dashboard →
+        {finishing ? 'Saving…' : 'Go to my dashboard →'}
       </Button>
     </div>
   )

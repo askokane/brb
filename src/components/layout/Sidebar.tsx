@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useOnboardingStore } from '@/store/onboarding'
+import { signOut } from '@/lib/auth/actions'
 import { cn } from '@/lib/utils'
 import {
   LayoutDashboard,
@@ -10,6 +11,7 @@ import {
   CalendarDays,
   Tag,
   Settings,
+  LogOut,
 } from 'lucide-react'
 
 const NAV = [
@@ -71,21 +73,32 @@ export default function Sidebar() {
       </nav>
 
       {/* User */}
-      <Link
-        href="/profile"
-        className={cn(
-          'flex items-center gap-3 px-4 py-4 border-t border-slate-100 hover:bg-slate-50 transition-colors',
-          pathname === '/profile' && 'bg-indigo-50'
-        )}
-      >
-        <Avatar name={displayName} size="lg" />
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-slate-800 truncate">{displayName}</p>
-          {profile.role && (
-            <p className="text-xs text-slate-400 truncate">{profile.role}</p>
+      <div className="border-t border-slate-100">
+        <Link
+          href="/profile"
+          className={cn(
+            'flex items-center gap-3 px-4 py-4 hover:bg-slate-50 transition-colors',
+            pathname === '/profile' && 'bg-indigo-50'
           )}
-        </div>
-      </Link>
+        >
+          <Avatar name={displayName} size="lg" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-800 truncate">{displayName}</p>
+            {profile.role && (
+              <p className="text-xs text-slate-400 truncate">{profile.role}</p>
+            )}
+          </div>
+        </Link>
+        <form action={signOut} className="px-3 pb-3">
+          <button
+            type="submit"
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          >
+            <LogOut className="w-4 h-4 text-slate-400" />
+            Sign out
+          </button>
+        </form>
+      </div>
     </aside>
   )
 }

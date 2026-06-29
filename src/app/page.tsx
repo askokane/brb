@@ -1,8 +1,7 @@
 import { redirect } from 'next/navigation'
 
-// No auth yet, so the root sends visitors straight into onboarding.
-// Once auth lands, this becomes a marketing landing page for logged-out
-// users and redirects authenticated users to /dashboard.
+// proxy.ts gates this route: unauthenticated visitors are sent to /login before
+// they ever reach here, so an authenticated landing on "/" goes to the app.
 export default function HomePage() {
-  redirect('/onboarding')
+  redirect('/dashboard')
 }

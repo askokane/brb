@@ -10,11 +10,6 @@ export default function Step2Page() {
 
   const canContinue = profile.role.trim() !== '' || profile.company.trim() !== ''
 
-  function handleLinkedInConnect() {
-    // LinkedIn OAuth — redirect to auth provider
-    window.location.href = '/api/auth/linkedin'
-  }
-
   return (
     <div className="space-y-8">
       <div className="space-y-2">
@@ -45,32 +40,18 @@ export default function Step2Page() {
           />
         </Field>
 
-        <div className="space-y-2 pt-2">
-          <p className="text-sm font-medium text-stone-700">LinkedIn</p>
-
-          {profile.linkedinUrl ? (
-            <div className="flex items-center gap-3 h-12 px-4 rounded-xl border border-[#0A66C2]/30 bg-[#0A66C2]/5">
-              <LinkedInIcon />
-              <span className="text-sm text-stone-700 flex-1 truncate">{profile.linkedinUrl}</span>
-              <button
-                onClick={() => setProfile({ linkedinUrl: '' })}
-                className="text-xs text-stone-400 hover:text-stone-600"
-              >
-                Disconnect
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={handleLinkedInConnect}
-              className="w-full h-12 rounded-xl border-2 border-[#0A66C2] text-[#0A66C2] font-semibold text-sm flex items-center justify-center gap-2.5 hover:bg-[#0A66C2]/5 active:bg-[#0A66C2]/10 transition-colors"
-            >
-              <LinkedInIcon />
-              Connect LinkedIn
-            </button>
-          )}
-
+        <div className="space-y-1.5 pt-2">
+          <label className="flex items-center gap-2 text-sm font-medium text-stone-700">
+            <LinkedInIcon /> LinkedIn URL
+          </label>
+          <Input
+            placeholder="https://linkedin.com/in/yourname"
+            value={profile.linkedinUrl}
+            onChange={(e) => setProfile({ linkedinUrl: e.target.value })}
+            className={inputClass()}
+          />
           <p className="text-xs text-stone-400">
-            Optional — lets BRB pull your profile and write in your voice.
+            Optional — lets BRB reference your profile when writing in your voice.
           </p>
         </div>
       </div>

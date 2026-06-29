@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { useOnboardingStore } from '@/store/onboarding'
+import { useOnboardingStore, selectUserProfile } from '@/store/onboarding'
+import { putProfile } from '@/lib/api/profile-client'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -39,10 +40,16 @@ function IntegrationRow({
 export default function SettingsPage() {
   const { profile, setProfile, tone, setTone, capacity, setCapacity } = useOnboardingStore()
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
 
-  function save() {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 1500)
+  async function save() {
+    setSaving(true)
+    const result = await putProfile(selectUserProfile(useOnboardingStore.getState()))
+    setSaving(false)
+    if (result) {
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1500)
+    }
   }
 
   return (
@@ -95,8 +102,8 @@ export default function SettingsPage() {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={save} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5">
-              {saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save changes'}
+            <Button onClick={save} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5">
+              {saved ? <><Check className="w-4 h-4" /> Saved</> : saving ? 'Saving…' : 'Save changes'}
             </Button>
           </div>
         </TabsContent>
@@ -130,8 +137,8 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="flex justify-end">
-            <Button onClick={save} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5">
-              {saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save tone'}
+            <Button onClick={save} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-1.5">
+              {saved ? <><Check className="w-4 h-4" /> Saved</> : saving ? 'Saving…' : 'Save tone'}
             </Button>
           </div>
         </TabsContent>

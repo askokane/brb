@@ -1,5 +1,18 @@
 // Domain types for BRB
 
+// The signed-in user's account/profile. Persisted to InsForge (user_profiles
+// table); `email` is sourced from InsForge Auth, the rest is app data.
+export interface UserProfile {
+  fullName: string
+  email: string
+  role: string
+  company: string
+  linkedinUrl: string
+  goals: string[]
+  tone: { style: string; avoid: string; word: string }
+  capacity: { maxContacts: number; frequencyPerWeek: number }
+}
+
 export type ContactSource = 'manual' | 'csv' | 'linkedin' | 'qr'
 
 // Structured data scraped from LinkedIn (via Proxycurl). Optional — only

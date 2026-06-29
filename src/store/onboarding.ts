@@ -1,5 +1,6 @@
 'use client'
 import { create } from 'zustand'
+import type { UserProfile } from '@/types'
 
 export interface OnboardingProfile {
   fullName: string
@@ -31,6 +32,12 @@ interface OnboardingState {
   toggleGoal: (goal: string) => void
   setTone: (patch: Partial<OnboardingTone>) => void
   setCapacity: (patch: Partial<OnboardingCapacity>) => void
+  hydrate: (data: {
+    profile?: Partial<OnboardingProfile>
+    goals?: string[]
+    tone?: Partial<OnboardingTone>
+    capacity?: Partial<OnboardingCapacity>
+  }) => void
 }
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
@@ -62,4 +69,27 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
 
   setCapacity: (patch) =>
     set((s) => ({ capacity: { ...s.capacity, ...patch } })),
+
+  // Replace local state with values loaded from the server (account profile).
+  hydrate: (data) =>
+    set((s) => ({
+      profile: { ...s.profile, ...(data.profile ?? {}) },
+      goals: data.goals ?? s.goals,
+      tone: { ...s.tone, ...(data.tone ?? {}) },
+      capacity: { ...s.capacity, ...(data.capacity ?? {}) },
+    })),
 }))
+
+// Project the onboarding store into the persisted account-profile shape.
+export function selectUserProfile(s: OnboardingState): UserProfile {
+  return {
+    fullName: s.profile.fullName,
+    email: s.profile.email,
+    role: s.profile.role,
+    company: s.profile.company,
+    linkedinUrl: s.profile.linkedinUrl,
+    goals: s.goals,
+    tone: s.tone,
+    capacity: s.capacity,
+  }
+}
